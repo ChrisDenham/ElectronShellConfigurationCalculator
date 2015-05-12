@@ -241,6 +241,49 @@ namespace ElectronShells
                 Console.WriteLine("     " + builder.getNobleRelativeElectronConfigurationString(atomicNumber));
                 Console.WriteLine("     " + builder.getShellOccupancyString(atomicNumber));
             }
+
+            int [,] table = new int [8,19];
+            for (int group = 0; group <= 18; ++group) table[0, group] = group;
+            for (int period = 0; period <= 7; ++period) table[period, 0] = period;
+
+            for (int atomicNumber = 1; atomicNumber <= 118; ++atomicNumber)
+            {
+                if (atomicNumber >= 57 && atomicNumber <= 71) continue; // exclude Lanthanides for now
+                if (atomicNumber >= 89 && atomicNumber <= 103) continue; // exclude Actinides for now
+                List<int> occupancy = builder.getShellOccupancy(atomicNumber);
+                List<SubshellUsage> configuration = builder.getElectronConfiguration(atomicNumber);
+                int period = occupancy.Count;
+                int group = occupancy[occupancy.Count - 1];
+                if (atomicNumber == 2) group = 18; // special case for helium
+                if (period == 2 && configuration.Count > 2) group = group + 10; // shift period 2 elements with 2p subshell to RHS
+                if (period == 3 && configuration.Count > 4) group = group + 10; // shift period 3 elements with 3p subshell to RHS
+                if (period >= 4)
+                {
+                    // Add in the electrons from the d subshell below outer shell
+                    foreach (SubshellUsage usage in configuration)
+                    {
+                        if (usage.subshell.n == period - 1 && usage.subshell.l == 2)
+                        {
+                            group = group + usage.electrons;
+                        }
+                    }
+                }
+                table[period, group] = atomicNumber;
+            }
+
+            Console.WriteLine();
+            Console.WriteLine("Periodic table of elements");
+
+            for (int period = 0; period <= 7; ++period)
+            {
+                for (int group = 0; group <= 18; ++group)
+                {
+                    int value = table[period, group];
+                    Console.Write((value == 0 ? "" : value.ToString()).PadLeft(4));
+                }
+                Console.WriteLine();
+            }
+
             Console.WriteLine("Press any key.");
             Console.ReadKey();
         }
